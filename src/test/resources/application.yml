@@ -1,0 +1,33 @@
+spring:
+  profiles:
+    active: test
+  application:
+    name: cucumber-test-automation
+
+logging:
+  level:
+    com.courtreserve: DEBUG
+    io.cucumber: INFO
+    org.springframework: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Qase configuration
+qase:
+  enable: true
+  project:
+    code: "COURT"
+  api:
+    token: "${QASE_API_TOKEN:}"
+  environment: "${QASE_ENVIRONMENT:local}"
+  run:
+    title: "Automated Test Run - ${QASE_ENVIRONMENT:local}"
+    description: "Cucumber automated test execution"
+
+# Test configuration
+test:
+  browser:
+    headless: false
+    timeout: 30000
+  base:
+    url: "https://example.com"

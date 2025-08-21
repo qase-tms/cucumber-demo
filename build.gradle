@@ -1,0 +1,86 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.courtreserve'
+version = '1.0-SNAPSHOT'
+
+ext {
+    junitVersion = '5.11.3'
+    junitPlatformVersion = '1.12.1'
+    springBootVersion = '3.4.4'
+    cucumberVersion = '7.21.1'
+    playwrightVersion = '1.53.0'
+    assertJVersion = '3.27.3'
+    datafaker = '2.4.3'
+    jacksonVersion = '2.17.1'
+    jetbrainsAnnotationsVersion = '24.1.0'
+}
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs.add("-parameters")
+}
+
+dependencies {
+    implementation "net.datafaker:datafaker:${datafaker}"
+    implementation "com.microsoft.playwright:playwright:${playwrightVersion}"
+    implementation "io.cucumber:cucumber-spring:${cucumberVersion}"
+    implementation "io.cucumber:cucumber-java:${cucumberVersion}"
+    implementation "org.assertj:assertj-core:${assertJVersion}"
+    implementation "io.cucumber:cucumber-junit-platform-engine:${cucumberVersion}"
+    implementation "org.junit.platform:junit-platform-suite:${junitPlatformVersion}"
+    implementation "org.junit.platform:junit-platform-launcher:${junitPlatformVersion}"
+    implementation "org.springframework.boot:spring-boot-starter-test:${springBootVersion}"
+    implementation "org.junit.jupiter:junit-jupiter-api:${junitVersion}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:${junitVersion}"
+    implementation "com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}"
+    implementation "org.jetbrains:annotations:${jetbrainsAnnotationsVersion}"
+    testImplementation("io.qase:qase-cucumber-v7-reporter:4.1.16")
+    // Force compatible JSON library version for Qase reporter
+    implementation "org.json:json:20240303"
+}
+
+def configureCucumberTask = { Test task, List<String> plugins ->
+    def cucumberTag = System.getenv("CUCUMBER_FILTER_TAG")
+    def springProfile = System.getenv("SPRING_PROFILE")
+
+    task.systemProperty "cucumber.filter.tags", cucumberTag
+    task.systemProperty "cucumber.plugin", plugins.join(",")
+    task.systemProperty "spring.profiles.active", springProfile
+
+    task.testLogging {
+        events "started", "passed", "failed", "skipped"
+        showStandardStreams = true
+    }
+
+    task.outputs.upToDateWhen { false }
+}
+
+tasks.register('runCucumberTests', Test) {
+    useJUnitPlatform()
+    configureCucumberTask(delegate, [
+        "pretty",
+        "html:build/cucumber-report.html",
+        "json:build/cucumber.json",
+        "junit:build/cucumber.xml",
+        "io.qase.cucumber7.QaseEventListener"
+    ])
+}
+
+tasks.register("playwrightInstall", JavaExec) {
+    group = "verification"
+    description = "Install Playwright browsers and system dependencies"
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass.set("com.microsoft.playwright.CLI")
+    args = ["install", "--with-deps"]
+}
