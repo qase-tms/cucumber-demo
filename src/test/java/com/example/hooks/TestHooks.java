@@ -1,57 +1,70 @@
 package com.example.hooks;
 
 import io.cucumber.java.*;
-import org.openqa.selenium.OutputType;
-import org.openqa.selenium.TakesScreenshot;
-import org.openqa.selenium.WebDriver;
-import com.example.utils.DriverManager;
+import com.example.utils.PlaywrightManager;
 import io.qase.cucumber7.Qase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class TestHooks {
     private static final Logger logger = LoggerFactory.getLogger(TestHooks.class);
-    private static WebDriver driver;
+    private int stepCounter = 0;
 
-    @BeforeAll
-    public static void setUpSuite() {
-        logger.info("Initializing WebDriver for test suite.");
-        DriverManager.setupDriver();
-        driver = DriverManager.getDriver();
+    @Before("@playwright")
+    public void setUp(Scenario scenario) {
+        logger.info("Starting test for scenario: {}", scenario.getName());
+        stepCounter = 0;
+        
+        // Create directories for screenshots
+        try {
+            Files.createDirectories(Paths.get("test-results/screenshots"));
+        } catch (Exception e) {
+            logger.warn("Could not create test-results directories: {}", e.getMessage());
+        }
     }
 
-    @Before("@selenium")
-    public void setUp(Scenario scenario) {
-        logger.info("Starting browser for: {}", scenario.getName());
-        if (driver == null) {
-            DriverManager.setupDriver();
-            driver = DriverManager.getDriver();
-        }
+    @BeforeStep
+    public void beforeStep(Scenario scenario) {
+        stepCounter++;
+        logger.info("Executing step {} for scenario: {}", stepCounter, scenario.getName());
     }
 
     @AfterStep
-    public void takeScreenshotOnFailure(Scenario scenario) {
-        if (scenario.isFailed() && driver != null) {
-            try {
-                byte[] screenshotBytes = ((TakesScreenshot) driver).getScreenshotAs(OutputType.BYTES);
-                Qase.attach("failed-screenshot.png", screenshotBytes, "image/png");
-            } catch (Exception e) {
-                logger.error("Error capturing screenshot: {}", e.getMessage(), e);
+    public void afterStep(Scenario scenario) {
+        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss_SSS"));
+        String scenarioName = scenario.getName().replaceAll("[^a-zA-Z0-9]", "_");
+        
+        try {
+            // Take screenshot after every step (not just failures)
+            byte[] screenshotBytes = PlaywrightManager.takeScreenshot();
+            if (screenshotBytes != null) {
+                String screenshotName = String.format("step_%d_%s_%s.png", stepCounter, scenarioName, timestamp);
+                
+                // Save screenshot to file system
+                Path screenshotPath = Paths.get("test-results/screenshots", screenshotName);
+                Files.write(screenshotPath, screenshotBytes);
+                
+                // Attach to Qase
+                Qase.attach(screenshotName, screenshotBytes, "image/png");
+                
+                logger.info("Screenshot captured: {}", screenshotName);
             }
+        } catch (Exception e) {
+            logger.error("Error capturing screenshot: {}", e.getMessage(), e);
         }
     }
 
-    @AfterAll
-    public static void tearDownSuite() {
-        if (driver != null) {
-            try {
-                driver.quit();
-                logger.info("Browser closed after all tests.");
-            } catch (Exception e) {
-                logger.warn("Error while quitting WebDriver: {}", e.getMessage());
-            } finally {
-                driver = null;
-            }
+    @After("@playwright")
+    public void tearDown(Scenario scenario) {
+        try {
+            logger.info("Test completed for scenario: {}", scenario.getName());
+        } catch (Exception e) {
+            logger.error("Error in tearDown: {}", e.getMessage(), e);
         }
     }
 }

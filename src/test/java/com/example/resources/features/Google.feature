@@ -1,13 +1,14 @@
 Feature: Google Search
 
-  @selenium
+  @playwright
   Scenario: Search on Google
     Given I open Google
-    Given I search for "Selenium Cucumber"
+    Given I search for "Playwright Cucumber"
+    Given I verify the search results contain "Playwright"
 
 
-  @selenium
+  @playwright
   Scenario: Failing Google Search Test
     Given I open Google
-    Given I search for "Selenium Cucumber"
+    Given I search for "Playwright Cucumber"
     Given I fail the test on purpose

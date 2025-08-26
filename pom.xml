@@ -19,7 +19,7 @@
    <dependency>
       <groupId>io.qase</groupId>
       <artifactId>qase-cucumber-v7-reporter</artifactId>
-      <version>4.1.8</version>
+      <version>4.1.16</version>
       <scope>test</scope>
    </dependency>
    <dependency>
@@ -53,18 +53,23 @@
       <scope>test</scope>
    </dependency>
 
-    <!-- Selenium Dependency -->
+    <!-- Playwright Dependency -->
     <dependency>
-        <groupId>org.seleniumhq.selenium</groupId>
-        <artifactId>selenium-java</artifactId>
-        <version>4.27.0</version>
+        <groupId>com.microsoft.playwright</groupId>
+        <artifactId>playwright</artifactId>
+        <version>1.40.0</version>
     </dependency>
 
-    <!-- WebDriver Manager (for auto driver setup) -->
+    <!-- SLF4J Logging Dependencies -->
     <dependency>
-        <groupId>io.github.bonigarcia</groupId>
-        <artifactId>webdrivermanager</artifactId>
-        <version>5.9.2</version>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.36</version>
+    </dependency>
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>1.7.36</version>
     </dependency>
 </dependencies>
 
